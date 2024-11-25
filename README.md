@@ -1,6 +1,6 @@
-# Decentralized Live Streaming Network
+# Decentralized Live Streaming platform
 
-This project demonstrates a WebRTC-powered decentralized live-streaming network where viewers act as relays, reducing server load.
+This project demonstrates a WebRTC-powered decentralized live-streaming platform where viewers act as relays, reducing server load. It's an innovative approach to leverage the participants unused resources to relay the streaming traffic instead of frequently relying on STUN/TURN servers in case of P2P connection fail.
 
 ## Features
 - Peer-to-peer live streaming with WebRTC
