@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Broadcaster</title>
+</head>
+<body>
+    <h1>WebRTC Broadcaster</h1>
+    <video id="localVideo" autoplay muted></video>
+    <script>
+        const signalingServer = new WebSocket("ws://localhost:9090");
+        const peerConnection = new RTCPeerConnection();
+
+        signalingServer.onopen = () => {
+            console.log("Connected to signaling server");
+        };
+
+        signalingServer.onmessage = (message) => {
+            const data = JSON.parse(message.data);
+
+            if (data.answer) {
+                peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            }
+        };
+
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+            stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
+            peerConnection.createOffer()
+                .then((offer) => {
+                    peerConnection.setLocalDescription(offer);
+                    signalingServer.send(JSON.stringify({ offer, targetId: "<relay-peer-id>" }));
+                });
+        });
+
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+                signalingServer.send(JSON.stringify({ candidate: event.candidate, targetId: "<relay-peer-id>" }));
+            }
+        };
+    </script>
+</body>
+</html>

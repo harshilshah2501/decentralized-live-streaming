@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewer</title>
+</head>
+<body>
+    <h1>WebRTC Viewer</h1>
+    <video id="remoteVideo" autoplay></video>
+    <script>
+        const signalingServer = new WebSocket("ws://localhost:9090");
+        const peerConnection = new RTCPeerConnection();
+
+        peerConnection.ontrack = (event) => {
+            document.getElementById('remoteVideo').srcObject = event.streams[0];
+        };
+
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+                signalingServer.send(JSON.stringify({ candidate: event.candidate, targetId: "<next-viewer-id>" }));
+            }
+        };
+
+        signalingServer.onmessage = (message) => {
+            const data = JSON.parse(message.data);
+
+            if (data.offer) {
+                peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer))
+                    .then(() => peerConnection.createAnswer())
+                    .then((answer) => {
+                        peerConnection.setLocalDescription(answer);
+                        signalingServer.send(JSON.stringify({ answer, targetId: data.from }));
+                    });
+            } else if (data.candidate) {
+                peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+            }
+        };
+    </script>
+</body>
+</html>
